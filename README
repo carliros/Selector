@@ -1,0 +1,15 @@
+
+Selector, to test the selector's part of CSS
+
+To Compile:
+    make all
+
+In order to get installed, you will need:
+    - wxhaskell
+    - uulib
+    - uuagc
+    - uuparsinglib (not necessary for executing but for generating selectors examples)
+
+Then you can execute with:  sel
+
+There are some html examples that you can try (I am using just some html tags). See http://hsbrowser.wordpress.com/ for a more detail description.

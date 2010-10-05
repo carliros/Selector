@@ -1,0 +1,41 @@
+-- Abstract DataTypes
+
+DATA Root
+    | Root ntree:NTree
+
+DATA NTree
+    | NTree Node ntrees:NTrees
+
+TYPE NTrees = [NTree]
+
+DATA Node
+    | Text String
+    | Tag  String
+
+DERIVING *: Show
+
+{
+instance Eq Node where
+    Tag n1 == Tag n2 = n1 == n2
+    _      == _      = False
+}
+
+{
+-- examples
+ex1 = NTree (Tag "html") [ NTree (Tag "h1") [NTree (Text "title h1" ) [], NTree (Tag "em") [NTree (Text "element em") []]]
+                         , NTree (Tag "p" ) [NTree (Tag "small") [NTree (Text "small"  ) []], NTree (Text "element p") [], NTree (Tag "small") [NTree (Text "small"  ) []]]
+                         , NTree (Text "carlos") []
+                         , NTree (Tag "em") [NTree (Text "element p") [], NTree (Tag "small") [NTree (Text "small"  ) []]]
+                         ]
+
+ex2 = NTree (Tag "html") [NTree (Tag "div") [ NTree (Tag "h1")[ NTree (Text "text")[]] 
+                                            , NTree (Tag "p") [ NTree (Tag "small")[], NTree (Text "text") [], NTree (Tag "big") []]
+                                            ]
+                         ]
+
+ex3 = NTree (Tag "html") [NTree (Tag "head")[], NTree (Tag "body") []]
+
+ex4 = NTree (Tag "html")[NTree (Tag "head") [NTree (Tag "body")[]]]
+
+ex5 = NTree (Tag "html") []
+}

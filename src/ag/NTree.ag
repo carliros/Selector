@@ -1,0 +1,90 @@
+PRAGMA genlinepragmas
+
+INCLUDE "DataTree.ag"
+
+imports{
+import DataCss
+import Data.List
+import Data.Maybe
+import FSTree
+}
+
+-- Selector's Stuff
+
+ATTR Node [ | | nd:SELF ]
+ATTR NTree [ | | node:Node ]
+SEM NTree
+    | NTree lhs.node = @node.nd
+
+ATTR NTrees NTree [ fths:{[Node]} | | ]
+SEM NTrees
+    | Cons hd.fths = @hd.node : @lhs.fths
+           tl.fths = @lhs.fths
+
+SEM Root
+    | Root ntree.fths = []
+
+ATTR NTrees [ sbls:{[Node]} | | befs:{[Node]}]
+SEM NTrees
+    | Cons tl.sbls  = @hd.node : @lhs.sbls
+           lhs.befs = @lhs.sbls
+    | Nil  lhs.befs = @lhs.sbls
+
+SEM NTree
+    | NTree ntrees.sbls = []
+
+-- default style sheet
+{
+defaultStyle :: [Selector]
+defaultStyle = [ --SimpSelector (TypeSelector "big")
+                 CombSelector (TypeSelector "body") ">" (CombSelector (TypeSelector "p") " " (SimpSelector (TypeSelector "big")))
+               , SimpSelector (TypeSelector "small")
+               --, SimpSelector UnivSelector
+               ]
+}
+
+-- Redistributing the selector's list
+ATTR NTrees NTree [ css:{[Selector]} | | ]
+SEM Root
+    | Root ntree.css = defaultStyle
+
+-- Generating the Formatting Structure
+
+SEM NTree
+    | NTree loc.rlist = map (applySelector @node.nd @lhs.fths @ntrees.befs) defaultStyle
+            loc.sel   = or @loc.rlist
+            loc.num   = if @loc.sel then fromMaybe (-1) (elemIndex True @loc.rlist) + 1 else 0
+
+ATTR NTrees [|| res:{[BoxTree]}]
+SEM NTrees
+    | Cons lhs.res = @hd.res : @tl.res
+    | Nil  lhs.res = []
+
+ATTR Root NTree [|| res: BoxTree ]
+SEM NTree
+    | NTree lhs.res = let nd = case @node.nd of
+                                Tag  str -> BoxTag  @loc.sel @loc.num str
+                                Text str -> BoxText @loc.sel @loc.num str
+                      in BoxTree nd @ntrees.res
+
+{
+applySelector :: Node -> [Node] -> [Node] -> Selector -> Bool
+applySelector nd _ _ (SimpSelector s) = case s of
+                                            TypeSelector nm -> nd == (Tag nm)
+                                            UnivSelector    -> True
+applySelector nd fths sbls (CombSelector ssel op sel) = case op of
+                                                            " " -> (verifyDescd ssel fths) && (applySelector nd fths sbls sel) -- descendant selector
+                                                            ">" -> (verifyChild ssel fths) && (applySelector nd fths sbls sel) -- child selector
+                                                            "+" -> (verifySibln ssel sbls) && (applySelector nd fths sbls sel) -- sibling selector
+    where verifyDescd s fths = case s of
+                                TypeSelector nm -> elem (Tag nm) fths
+                                UnivSelector    -> True -- fix me: what if i am the root, who is my father?, of course the fhts will be empty
+          verifyChild s []     = False
+          verifyChild s (x:xs) = case s of
+                                    TypeSelector nm -> (Tag nm) == x
+                                    UnivSelector    -> True -- fix me: what if i am the root, who is my father?, of course the fhts will be empty
+          verifySibln s sbls = case s of
+                                TypeSelector nm -> elem (Tag nm) sbls
+                                UnivSelector    -> True -- fix me: what if i am the first child, who is my left sibling?, of course the sbls will be empty
+}
+

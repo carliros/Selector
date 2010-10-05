@@ -1,0 +1,96 @@
+
+DATA BoxRoot
+    | BoxRoot BoxTree
+
+DATA BoxTree
+    | BoxTree BoxNode Boxes
+
+TYPE Boxes = [BoxTree]
+
+DATA BoxNode
+    | BoxTag  Bool Int String
+    | BoxText Bool Int String
+
+DERIVING *: Show
+
+-- Computing yPos
+ATTR BoxTree Boxes [yPos: Int || ]
+SEM BoxRoot
+    | BoxRoot boxTree.yPos = yInit
+SEM BoxTree
+    | BoxTree loc.yPos     = @lhs.yPos
+              boxes.yPos   = @lhs.yPos + ySep
+
+-- Computing xPos
+ATTR BoxTree Boxes [|| len:Int ]
+SEM BoxTree
+    | BoxTree loc.len = if @boxes.len == 0
+                        then xBox + xSep
+                        else @boxes.len
+              lhs.len = @loc.len
+
+SEM Boxes
+    | Cons lhs.len = @hd.len + @tl.len
+    | Nil  lhs.len = 0
+
+
+
+ATTR BoxTree Boxes [ | xPos:Int | ]
+SEM BoxRoot
+    | BoxRoot boxTree.xPos = xInit
+
+SEM BoxTree
+    | BoxTree boxes.xPos = @lhs.xPos
+              lhs.xPos   = @boxes.xPos -- @lhs.xPos + @loc.len
+              loc.xPos   = @lhs.xPos + (@loc.len `div` 2) + (xSep `div` 2)
+
+SEM Boxes
+    | Cons hd.xPos  = @lhs.xPos
+           tl.xPos  = @lhs.xPos + @hd.len
+           lhs.xPos = @tl.xPos
+    | Nil  lhs.xPos = @lhs.xPos
+
+{
+xInit = 10
+yInit = 10
+xSep = 40
+ySep = 80
+xBox = 80
+yBox = 50
+
+-- formatting datatypes
+data OBox = Block Int Int Bool
+          | Name String Int Int
+          | Line (Int,Int) (Int, Int)
+        deriving Show
+
+}
+
+-- Generating Drawing Functions
+ATTR Boxes [|| vec2s:{[(Int,Int)]} ]
+SEM Boxes
+    | Cons lhs.vec2s = ((fst @hd.vec) + (xBox `div` 2), snd @hd.vec) : @tl.vec2s
+    | Nil  lhs.vec2s = []
+
+ATTR BoxTree [|| vec:{(Int,Int)} ]
+SEM BoxTree
+    | BoxTree lhs.vec = (@loc.xPos,@loc.yPos)
+
+ATTR BoxNode [|| bl:Bool nm:String ]
+SEM BoxNode
+    | BoxTag  lhs.nm = if @bool then @string ++ "\n" ++ show @int else @string
+              lhs.bl = @bool
+    | BoxText lhs.nm = if @bool then "text"  ++ "\n" ++ show @int else "text"
+              lhs.bl = @bool
+
+ATTR BoxRoot BoxTree Boxes [|| out:{[OBox]}]
+SEM BoxTree
+    | BoxTree lhs.out = let vec1   = (@loc.xPos + (xBox `div` 2), @loc.yPos + yBox)
+                            cmdVec = map (\vec2 -> Line vec1 vec2) @boxes.vec2s
+                        in ( (Block @loc.xPos @loc.yPos @boxNode.bl) : 
+                             (Name @boxNode.nm (@loc.xPos+10) (@loc.yPos+10)) : 
+                             @boxes.out ) ++ cmdVec
+
+SEM Boxes
+    | Cons lhs.out = @hd.out ++ @tl.out
+    | Nil  lhs.out = []
