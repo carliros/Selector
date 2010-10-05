@@ -33,7 +33,10 @@ SEM NTrees
 SEM NTree
     | NTree ntrees.sbls = []
 
--- default style sheet
+{-
+    default style sheet
+        you can put your instances in the "defaultStyle" list.
+-}
 {
 defaultStyle :: [Selector]
 defaultStyle = [ --SimpSelector (TypeSelector "big")
