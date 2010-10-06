@@ -3,7 +3,7 @@ PRAGMA genlinepragmas
 INCLUDE "DataTree.ag"
 
 imports{
-import DataCss
+--import DataCss
 import Data.List
 import Data.Maybe
 import FSTree
@@ -11,12 +11,12 @@ import FSTree
 
 -- Selector's Stuff
 
-ATTR Node [ | | nd:SELF ]
-ATTR NTree [ | | node:Node ]
+ATTR Node Selector SSelector Property [|| nd:SELF ]
+ATTR NTree [|| node:Node ]
 SEM NTree
     | NTree lhs.node = @node.nd
 
-ATTR NTrees NTree [ fths:{[Node]} | | ]
+ATTR NTrees NTree [ fths:{[Node]} ||]
 SEM NTrees
     | Cons hd.fths = @hd.node : @lhs.fths
            tl.fths = @lhs.fths
@@ -24,7 +24,7 @@ SEM NTrees
 SEM Root
     | Root ntree.fths = []
 
-ATTR NTrees [ sbls:{[Node]} | | befs:{[Node]}]
+ATTR NTrees [ sbls:{[Node]} || befs:{[Node]}]
 SEM NTrees
     | Cons tl.sbls  = @hd.node : @lhs.sbls
            lhs.befs = @lhs.sbls
@@ -35,7 +35,6 @@ SEM NTree
 
 {-
     default style sheet
-        you can put your instances in the "defaultStyle" list.
 -}
 {
 defaultStyle :: [Selector]
@@ -46,48 +45,70 @@ defaultStyle = [ --SimpSelector (TypeSelector "big")
                ]
 }
 
+-- Style Sheet
+ATTR NTree NTrees [|| sel:{[Maybe Selector]} ]
+SEM NTree
+    | NTree lhs.sel = let nsel = case @node.nd of
+                                    NTag _         -> Nothing
+                                    NText _        -> Nothing
+                                    NStyle         -> Nothing
+                                    NRuleCss (s,p) -> Just s    -- I am just needing selectors, and not his properties
+                      in nsel : @ntrees.sel
+
+SEM NTrees
+    | Cons lhs.sel = @hd.sel ++ @tl.sel
+    | Nil  lhs.sel = []
+                      
 -- Redistributing the selector's list
-ATTR NTrees NTree [ css:{[Selector]} | | ]
+ATTR NTrees NTree [ css:{[Selector]} ||]
 SEM Root
-    | Root ntree.css = defaultStyle
+    | Root ntree.css = catMaybes @ntree.sel
 
 -- Generating the Formatting Structure
 
 SEM NTree
-    | NTree loc.rlist = map (applySelector @node.nd @lhs.fths @ntrees.befs) defaultStyle
+    | NTree loc.rlist = map (applySelector @node.nd @lhs.fths @ntrees.befs) @lhs.css
             loc.sel   = or @loc.rlist
             loc.num   = if @loc.sel then fromMaybe (-1) (elemIndex True @loc.rlist) + 1 else 0
 
-ATTR NTrees [|| res:{[BoxTree]}]
+ATTR NTrees [|| res:{[Maybe BoxTree]}]
 SEM NTrees
     | Cons lhs.res = @hd.res : @tl.res
     | Nil  lhs.res = []
 
-ATTR Root NTree [|| res: BoxTree ]
+ATTR NTree [|| res: {Maybe BoxTree} ]
 SEM NTree
     | NTree lhs.res = let nd = case @node.nd of
-                                Tag  str -> BoxTag  @loc.sel @loc.num str
-                                Text str -> BoxText @loc.sel @loc.num str
-                      in BoxTree nd @ntrees.res
+                                NTag  str  -> Just $ BoxTag  @loc.sel @loc.num str
+                                NText str  -> Just $ BoxText @loc.sel @loc.num str
+                                NStyle     -> Nothing
+                                NRuleCss _ -> Nothing
+                      in if isNothing nd
+                         then Nothing
+                         else Just $ BoxTree (fromJust nd) (catMaybes @ntrees.res)
+
+ATTR Root [|| res: BoxTree ]
+SEM Root
+    | Root lhs.res = fromJust @ntree.res
 
 {
 applySelector :: Node -> [Node] -> [Node] -> Selector -> Bool
 applySelector nd _ _ (SimpSelector s) = case s of
-                                            TypeSelector nm -> nd == (Tag nm)
+                                            TypeSelector nm -> nd == (NTag nm)
                                             UnivSelector    -> True
 applySelector nd fths sbls (CombSelector ssel op sel) = case op of
                                                             " " -> (verifyDescd ssel fths) && (applySelector nd fths sbls sel) -- descendant selector
                                                             ">" -> (verifyChild ssel fths) && (applySelector nd fths sbls sel) -- child selector
                                                             "+" -> (verifySibln ssel sbls) && (applySelector nd fths sbls sel) -- sibling selector
     where verifyDescd s fths = case s of
-                                TypeSelector nm -> elem (Tag nm) fths
+                                TypeSelector nm -> elem (NTag nm) fths
                                 UnivSelector    -> True -- fix me: what if i am the root, who is my father?, of course the fhts will be empty
           verifyChild s []     = False
           verifyChild s (x:xs) = case s of
-                                    TypeSelector nm -> (Tag nm) == x
+                                    TypeSelector nm -> (NTag nm) == x
                                     UnivSelector    -> True -- fix me: what if i am the root, who is my father?, of course the fhts will be empty
           verifySibln s sbls = case s of
-                                TypeSelector nm -> elem (Tag nm) sbls
+                                TypeSelector nm -> elem (NTag nm) sbls
                                 UnivSelector    -> True -- fix me: what if i am the first child, who is my left sibling?, of course the sbls will be empty
 }
 

@@ -9,11 +9,10 @@ type NumLin = Int
 instance Show Token where
   show (Token t str nl) = show t ++ " " ++ show str ++ " in line " ++ show nl ++ "\n"
 
-data Tok  = TokKeyword      -- html, head, body, a, (any tag)
-          | TokSymbol       -- </> 
+data Tok  = TokKeyword      -- <html>, <head>, <body>, <a>, </html>, </head> ... (any tag with)
+          | TokSymbol       -- = + > : ; { }
           | TokValue	    -- "attribute value"
-          | TokSeparator    -- =
-          | TokString       -- any string or keystring
+          | TokString       -- any string or keystring or ident
           | TokError        -- couldn't reconize
                 deriving (Eq, Ord)
 
@@ -21,8 +20,7 @@ instance Show Tok where
   show TokKeyword    = " KeyWord    : "
   show TokSymbol     = " Symbol     : "
   show TokValue	     = " Value      : "
-  show TokSeparator  = " Separator  : "
-  show TokString     = " String     : "
+  show TokString     = " String | Ident : "
   show TokError      = " Error      : "
   
 keywordstxt  = [ "html", "head", "body", "table", "tr", "td", "th", "caption", "border", "colspan", "rowspan"
@@ -32,17 +30,17 @@ keywordstxt  = [ "html", "head", "body", "table", "tr", "td", "th", "caption", "
                , "small"
                , "style" ]
 keywordsops  = [ "<", ">", "</"]
-specialchars = "=";
+symbols      = "=+>:;{}";
 opchars      = "/<>";
 
 scanner src = do file   <- readFile src
-                 tokens <- tokenize keywordstxt keywordsops specialchars opchars file
+                 tokens <- tokenize keywordstxt keywordsops symbols opchars file
                  return tokens
 
-tokenize ktx kop scc opc inp = do let tokens = scan ktx kop scc opc inp 1
+tokenize ktx kop sbc opc inp = do let tokens = scan ktx kop sbc opc inp 1
                                   return tokens
 
-scan ktx kop scc opc xs n = scan' xs n
+scan ktx kop sbc opc xs n = scan' xs n
   where scan' []         _ = []
         scan' xxs@(x:xs) n
           = if isSpace x 
@@ -53,7 +51,7 @@ scan ktx kop scc opc xs n = scan' xs n
                 (nn,nbs)        = saltarBlancos xxs n
                 
 
-        isSpecialChar x	   = x `elem` scc
+        isSymbolChar x	   = x `elem` sbc
         isOperator x       = x `elem` opc
         operatorProcess x xs = let (y,  ys)   = span isOperator xs
                                    (tag, ts)  = span isAlphaNum ys
@@ -62,7 +60,9 @@ scan ktx kop scc opc xs n = scan' xs n
                                    str        = sbegin ++ tag ++ send
                                    in if sbegin `elem` kop && send `elem` kop && tag `elem` ktx
                                       then (TokKeyword, str, zs)
-                                      else (TokError, "simbolo desconocido \"" ++ str ++ "\"", zs)
+                                      else if isSymbolChar x
+                                           then (TokSymbol, [x], xs)
+                                           else (TokError, "simbolo desconocido: " ++ str, zs)
         
         isNotComillas x = x /= '\"'
 
@@ -70,7 +70,7 @@ scan ktx kop scc opc xs n = scan' xs n
 
         token x xs
             | isOperator x    = operatorProcess x xs
-	        | isSpecialChar x = (TokSeparator, [x], xs)
+	        | isSymbolChar x  = (TokSymbol, [x], xs)
             {-
             | isPrint x       = let (ys, zs) = span isText xs
                                     str      = x:ys
@@ -81,7 +81,7 @@ scan ktx kop scc opc xs n = scan' xs n
             | isAlphaNum x    = let (ys,zs) = span isAlphaNum xs
                                     str = x:ys
                                 in  (TokString, str, zs)
-            | otherwise       = (TokError, "simbolo desconocido \"" ++ x:[] ++ "\"", xs)
+            | otherwise       = (TokError, "simbolo desconocido: " ++ [x], xs)
 
 saltarBlancos []     n = (n,[])
 saltarBlancos xxs@(x:xs) n

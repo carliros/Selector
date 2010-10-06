@@ -13,26 +13,42 @@ parseHtml file = do
     ast    <- parseIO pHtml tokens
     return ast
 
-pHtml =  (\bd -> NTree (Tag "html") [bd]) <$ pOpen "html" <*> pBody <* pClose "html"
+pHtml =  (\hd bd -> NTree (NTag "html") [hd, bd]) <$ pOpen "html" <*> pHead <*> pBody <* pClose "html"
 
---pHead = NTree (Tag "head") <$ pOpen "head" <*> pCss <* pClose "head"
+pHead = (\stl -> NTree (NTag "head") [stl]) <$> pTagged "head" pStyle
 
-pBody = NTree (Tag "body") <$ pOpen "body" <*> pList1 pElem <* pClose "body"
+pStyle = NTree NStyle <$> pTagged "style" (pList1 pRuleCss)
 
-pElem =  pHead <|> pParag <|> pBig <|> pSmall <|> pText
+pRuleCss = (\sel pr -> NTree (NRuleCss (sel,pr)) []) <$> pSelector <* pSymbol "{" 
+                                                                        <*> pList1Sep (pSymbol ";") pProperty
+                                                                   <* pSymbol "}"
 
-pHead =  NTree (Tag "h1") <$> pTagged "h1" (pList1 pElem)
-     <|> NTree (Tag "h2") <$> pTagged "h2" (pList1 pElem)
-     <|> NTree (Tag "h3") <$> pTagged "h3" (pList1 pElem)
-     <|> NTree (Tag "h4") <$> pTagged "h4" (pList1 pElem)
-     <|> NTree (Tag "h5") <$> pTagged "h5" (pList1 pElem)
-     <|> NTree (Tag "h6") <$> pTagged "h6" (pList1 pElem)
+pSelector = SimpSelector  <$> pSSelector
+         <|> CombSelector <$> pSSelector <*> pCombinator <*> pSelector
 
-pParag = NTree (Tag "p"    ) <$> pTagged "p"     (pList1 pElem)
-pBig   = NTree (Tag "big"  ) <$> pTagged "big"   (pList1 pElem)
-pSmall = NTree (Tag "small") <$> pTagged "small" (pList1 pElem)
+pSSelector = TypeSelector  <$> pString
+          <|> UnivSelector <$  pSymbol "*"
 
-pText = (\lstr -> NTree (Text (unwords lstr)) []) <$> pList1 pString
+pCombinator = (pSymbol ">" <|> pSymbol "+") `opt` " "
+
+pProperty = Property <$> pString <* pSymbol ":" <*> pString
+
+pBody = NTree (NTag "body") <$> pTagged "body" (pList1 pElem)
+
+pElem =  pEHead <|> pParag <|> pBig <|> pSmall <|> pText
+
+pEHead =  NTree (NTag "h1") <$> pTagged "h1" (pList1 pElem)
+      <|> NTree (NTag "h2") <$> pTagged "h2" (pList1 pElem)
+      <|> NTree (NTag "h3") <$> pTagged "h3" (pList1 pElem)
+      <|> NTree (NTag "h4") <$> pTagged "h4" (pList1 pElem)
+      <|> NTree (NTag "h5") <$> pTagged "h5" (pList1 pElem)
+      <|> NTree (NTag "h6") <$> pTagged "h6" (pList1 pElem)
+
+pParag = NTree (NTag "p"    ) <$> pTagged "p"     (pList1 pElem)
+pBig   = NTree (NTag "big"  ) <$> pTagged "big"   (pList1 pElem)
+pSmall = NTree (NTag "small") <$> pTagged "small" (pList1 pElem)
+
+pText = (\lstr -> NTree (NText (unwords lstr)) []) <$> pList1 pString
 
 pTagged tag p = pOpen tag *> p <* pClose tag
 pOpen  str = pKeyword  $ "<"  ++ str ++ ">"
@@ -69,5 +85,4 @@ pString  = tSym TokString ""
 pKeyword = tSym TokKeyword
 pSymbol  = tSym TokSymbol
 pValue   = tSym TokValue ""
-pSep     = tSym TokSeparator
 

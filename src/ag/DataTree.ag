@@ -9,33 +9,46 @@ DATA NTree
 TYPE NTrees = [NTree]
 
 DATA Node
-    | Text String
-    | Tag  String
+    | NText     String
+    | NTag      String
+    | NStyle
+    | NRuleCss  rule:{(Selector, [Property])}
+
+DATA Selector
+    | SimpSelector SSelector
+    | CombSelector SSelector String Selector -- combinators: ' ', >, +
+
+DATA SSelector
+    | TypeSelector String
+    | UnivSelector
+
+DATA Property
+    | Property prop: String value: String
 
 DERIVING *: Show
 
 {
 instance Eq Node where
-    Tag n1 == Tag n2 = n1 == n2
+    NTag n1 == NTag n2 = n1 == n2
     _      == _      = False
 }
 
 {
 -- examples
-ex1 = NTree (Tag "html") [ NTree (Tag "h1") [NTree (Text "title h1" ) [], NTree (Tag "em") [NTree (Text "element em") []]]
-                         , NTree (Tag "p" ) [NTree (Tag "small") [NTree (Text "small"  ) []], NTree (Text "element p") [], NTree (Tag "small") [NTree (Text "small"  ) []]]
-                         , NTree (Text "carlos") []
-                         , NTree (Tag "em") [NTree (Text "element p") [], NTree (Tag "small") [NTree (Text "small"  ) []]]
-                         ]
+ex1 = NTree (NTag "html") [ NTree (NTag "h1") [NTree (NText "title h1" ) [], NTree (NTag "em") [NTree (NText "element em") []]]
+                          , NTree (NTag "p" ) [NTree (NTag "small") [NTree (NText "small"  ) []], NTree (NText "element p") [], NTree (NTag "small") [NTree (NText "small"  ) []]]
+                          , NTree (NText "carlos") []
+                          , NTree (NTag "em") [NTree (NText "element p") [], NTree (NTag "small") [NTree (NText "small"  ) []]]
+                          ]
 
-ex2 = NTree (Tag "html") [NTree (Tag "div") [ NTree (Tag "h1")[ NTree (Text "text")[]] 
-                                            , NTree (Tag "p") [ NTree (Tag "small")[], NTree (Text "text") [], NTree (Tag "big") []]
-                                            ]
-                         ]
+ex2 = NTree (NTag "html") [NTree (NTag "div") [ NTree (NTag "h1")[ NTree (NText "text")[]] 
+                                              , NTree (NTag "p") [ NTree (NTag "small")[], NTree (NText "text") [], NTree (NTag "big") []]
+                                              ]
+                          ]
 
-ex3 = NTree (Tag "html") [NTree (Tag "head")[], NTree (Tag "body") []]
+ex3 = NTree (NTag "html") [NTree (NTag "head")[], NTree (NTag "body") []]
 
-ex4 = NTree (Tag "html")[NTree (Tag "head") [NTree (Tag "body")[]]]
+ex4 = NTree (NTag "html") [NTree (NTag "head") [NTree (NTag "body")[]]]
 
-ex5 = NTree (Tag "html") []
+ex5 = NTree (NTag "html") []
 }
