@@ -30,7 +30,7 @@ keywordstxt  = [ "html", "head", "body", "table", "tr", "td", "th", "caption", "
                , "small"
                , "style" ]
 keywordsops  = [ "<", ">", "</"]
-symbols      = "=+>:;{}";
+symbols      = "=*+>:;{}";
 opchars      = "/<>";
 
 scanner src = do file   <- readFile src
