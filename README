@@ -10,6 +10,9 @@ In order to get installed, you will need:
     - uuagc
     - uuparsinglib (not necessary for executing but for generating selectors examples)
 
-Then you can execute with:  sel
+Then you can execute with:  ./sel
 
-There are some html examples that you can try (I am using just some html tags). See http://hsbrowser.wordpress.com/ for a more detail description.
+There are some html examples that you can try (I am using just some html tags). 
+
+For more detail information: http://hsbrowser.wordpress.com/selector-project/
+
