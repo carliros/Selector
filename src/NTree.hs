@@ -9,17 +9,17 @@ import Data.List
 import Data.Maybe
 import FSTree
 {-# LINE 12 "./src/ag/NTree.hs" #-}
-{-# LINE 39 "./src/ag/NTree.ag" #-}
+{-# LINE 40 "./src/ag/NTree.ag" #-}
 
 defaultStyle :: [Selector]
-defaultStyle = [ --SimpSelector (TypeSelector "big")
-                 CombSelector (TypeSelector "body") ">" (CombSelector (TypeSelector "p") " " (SimpSelector (TypeSelector "big")))
+defaultStyle = [ SimpSelector (TypeSelector "big")
+               , CombSelector (TypeSelector "body") ">" (CombSelector (TypeSelector "p") " " (SimpSelector (TypeSelector "big")))
                , SimpSelector (TypeSelector "small")
-               --, SimpSelector UnivSelector
+               , SimpSelector UnivSelector
                ]
 {-# LINE 21 "./src/ag/NTree.hs" #-}
 
-{-# LINE 94 "./src/ag/NTree.ag" #-}
+{-# LINE 95 "./src/ag/NTree.ag" #-}
 
 applySelector :: Node -> [Node] -> [Node] -> Selector -> Bool
 applySelector nd _ _ (SimpSelector s) = case s of
@@ -79,19 +79,21 @@ sem_NTree (NTree _node _ntrees )  =
 -- semantic domain
 type T_NTree  = ([Selector]) ->
                 ([Node]) ->
+                ([Node]) ->
                 ( Node ,(Maybe BoxTree),([Maybe Selector]))
 sem_NTree_NTree :: T_Node  ->
                    T_NTrees  ->
                    T_NTree 
 sem_NTree_NTree node_ ntrees_  =
     (\ _lhsIcss
-       _lhsIfths ->
+       _lhsIfathers
+       _lhsInextfathers ->
          (let _lhsOnode :: Node 
               _ntreesOsbls :: ([Node])
               _lhsOsel :: ([Maybe Selector])
               _lhsOres :: (Maybe BoxTree)
               _ntreesOcss :: ([Selector])
-              _ntreesOfths :: ([Node])
+              _ntreesOnextfathers :: ([Node])
               _nodeInd :: Node 
               _ntreesIbefs :: ([Node])
               _ntreesIres :: ([Maybe BoxTree])
@@ -99,34 +101,34 @@ sem_NTree_NTree node_ ntrees_  =
               _lhsOnode =
                   ({-# LINE 17 "./src/ag/NTree.ag" #-}
                    _nodeInd
-                   {-# LINE 103 "./src/ag/NTree.hs" #-})
+                   {-# LINE 105 "./src/ag/NTree.hs" #-})
               _ntreesOsbls =
-                  ({-# LINE 34 "./src/ag/NTree.ag" #-}
+                  ({-# LINE 37 "./src/ag/NTree.ag" #-}
                    []
-                   {-# LINE 107 "./src/ag/NTree.hs" #-})
+                   {-# LINE 109 "./src/ag/NTree.hs" #-})
               _lhsOsel =
-                  ({-# LINE 51 "./src/ag/NTree.ag" #-}
+                  ({-# LINE 52 "./src/ag/NTree.ag" #-}
                    let nsel = case _nodeInd of
                                  NTag _         -> Nothing
                                  NText _        -> Nothing
                                  NStyle         -> Nothing
                                  NRuleCss (s,p) -> Just s
                    in nsel : _ntreesIsel
-                   {-# LINE 116 "./src/ag/NTree.hs" #-})
+                   {-# LINE 118 "./src/ag/NTree.hs" #-})
               _rlist =
-                  ({-# LINE 70 "./src/ag/NTree.ag" #-}
-                   map (applySelector _nodeInd _lhsIfths _ntreesIbefs) _lhsIcss
-                   {-# LINE 120 "./src/ag/NTree.hs" #-})
-              _sel =
                   ({-# LINE 71 "./src/ag/NTree.ag" #-}
-                   or _rlist
-                   {-# LINE 124 "./src/ag/NTree.hs" #-})
-              _num =
+                   map (applySelector _nodeInd _lhsIfathers _ntreesIbefs) _lhsIcss
+                   {-# LINE 122 "./src/ag/NTree.hs" #-})
+              _sel =
                   ({-# LINE 72 "./src/ag/NTree.ag" #-}
+                   or _rlist
+                   {-# LINE 126 "./src/ag/NTree.hs" #-})
+              _num =
+                  ({-# LINE 73 "./src/ag/NTree.ag" #-}
                    if _sel     then fromMaybe (-1) (elemIndex True _rlist    ) + 1 else 0
-                   {-# LINE 128 "./src/ag/NTree.hs" #-})
+                   {-# LINE 130 "./src/ag/NTree.hs" #-})
               _lhsOres =
-                  ({-# LINE 81 "./src/ag/NTree.ag" #-}
+                  ({-# LINE 82 "./src/ag/NTree.ag" #-}
                    let nd = case _nodeInd of
                              NTag  str  -> Just $ BoxTag  _sel     _num     str
                              NText str  -> Just $ BoxText _sel     _num     str
@@ -135,19 +137,19 @@ sem_NTree_NTree node_ ntrees_  =
                    in if isNothing nd
                       then Nothing
                       else Just $ BoxTree (fromJust nd) (catMaybes _ntreesIres)
-                   {-# LINE 139 "./src/ag/NTree.hs" #-})
+                   {-# LINE 141 "./src/ag/NTree.hs" #-})
               _ntreesOcss =
-                  ({-# LINE 63 "./src/ag/NTree.ag" #-}
+                  ({-# LINE 64 "./src/ag/NTree.ag" #-}
                    _lhsIcss
-                   {-# LINE 143 "./src/ag/NTree.hs" #-})
-              _ntreesOfths =
+                   {-# LINE 145 "./src/ag/NTree.hs" #-})
+              _ntreesOnextfathers =
                   ({-# LINE 19 "./src/ag/NTree.ag" #-}
-                   _lhsIfths
-                   {-# LINE 147 "./src/ag/NTree.hs" #-})
+                   _lhsInextfathers
+                   {-# LINE 149 "./src/ag/NTree.hs" #-})
               ( _nodeInd) =
                   (node_ )
               ( _ntreesIbefs,_ntreesIres,_ntreesIsel) =
-                  (ntrees_ _ntreesOcss _ntreesOfths _ntreesOsbls )
+                  (ntrees_ _ntreesOcss _ntreesOnextfathers _ntreesOsbls )
           in  ( _lhsOnode,_lhsOres,_lhsOsel)))
 -- NTrees ------------------------------------------------------
 type NTrees  = [NTree ]
@@ -166,10 +168,11 @@ sem_NTrees_Cons :: T_NTree  ->
                    T_NTrees 
 sem_NTrees_Cons hd_ tl_  =
     (\ _lhsIcss
-       _lhsIfths
+       _lhsInextfathers
        _lhsIsbls ->
-         (let _hdOfths :: ([Node])
-              _tlOfths :: ([Node])
+         (let _hdOnextfathers :: ([Node])
+              _hdOfathers :: ([Node])
+              _tlOnextfathers :: ([Node])
               _tlOsbls :: ([Node])
               _lhsObefs :: ([Node])
               _lhsOsel :: ([Maybe Selector])
@@ -182,63 +185,67 @@ sem_NTrees_Cons hd_ tl_  =
               _tlIbefs :: ([Node])
               _tlIres :: ([Maybe BoxTree])
               _tlIsel :: ([Maybe Selector])
-              _hdOfths =
-                  ({-# LINE 21 "./src/ag/NTree.ag" #-}
-                   _hdInode : _lhsIfths
-                   {-# LINE 189 "./src/ag/NTree.hs" #-})
-              _tlOfths =
+              _hdOnextfathers =
                   ({-# LINE 22 "./src/ag/NTree.ag" #-}
-                   _lhsIfths
-                   {-# LINE 193 "./src/ag/NTree.hs" #-})
+                   _hdInode : _lhsInextfathers
+                   {-# LINE 192 "./src/ag/NTree.hs" #-})
+              _hdOfathers =
+                  ({-# LINE 23 "./src/ag/NTree.ag" #-}
+                   _lhsInextfathers
+                   {-# LINE 196 "./src/ag/NTree.hs" #-})
+              _tlOnextfathers =
+                  ({-# LINE 24 "./src/ag/NTree.ag" #-}
+                   _lhsInextfathers
+                   {-# LINE 200 "./src/ag/NTree.hs" #-})
               _tlOsbls =
-                  ({-# LINE 29 "./src/ag/NTree.ag" #-}
+                  ({-# LINE 32 "./src/ag/NTree.ag" #-}
                    _hdInode : _lhsIsbls
-                   {-# LINE 197 "./src/ag/NTree.hs" #-})
+                   {-# LINE 204 "./src/ag/NTree.hs" #-})
               _lhsObefs =
-                  ({-# LINE 30 "./src/ag/NTree.ag" #-}
+                  ({-# LINE 33 "./src/ag/NTree.ag" #-}
                    _lhsIsbls
-                   {-# LINE 201 "./src/ag/NTree.hs" #-})
+                   {-# LINE 208 "./src/ag/NTree.hs" #-})
               _lhsOsel =
-                  ({-# LINE 59 "./src/ag/NTree.ag" #-}
+                  ({-# LINE 60 "./src/ag/NTree.ag" #-}
                    _hdIsel ++ _tlIsel
-                   {-# LINE 205 "./src/ag/NTree.hs" #-})
+                   {-# LINE 212 "./src/ag/NTree.hs" #-})
               _lhsOres =
-                  ({-# LINE 76 "./src/ag/NTree.ag" #-}
+                  ({-# LINE 77 "./src/ag/NTree.ag" #-}
                    _hdIres : _tlIres
-                   {-# LINE 209 "./src/ag/NTree.hs" #-})
+                   {-# LINE 216 "./src/ag/NTree.hs" #-})
               _hdOcss =
-                  ({-# LINE 63 "./src/ag/NTree.ag" #-}
+                  ({-# LINE 64 "./src/ag/NTree.ag" #-}
                    _lhsIcss
-                   {-# LINE 213 "./src/ag/NTree.hs" #-})
+                   {-# LINE 220 "./src/ag/NTree.hs" #-})
               _tlOcss =
-                  ({-# LINE 63 "./src/ag/NTree.ag" #-}
+                  ({-# LINE 64 "./src/ag/NTree.ag" #-}
                    _lhsIcss
-                   {-# LINE 217 "./src/ag/NTree.hs" #-})
+                   {-# LINE 224 "./src/ag/NTree.hs" #-})
               ( _hdInode,_hdIres,_hdIsel) =
-                  (hd_ _hdOcss _hdOfths )
+                  (hd_ _hdOcss _hdOfathers _hdOnextfathers )
               ( _tlIbefs,_tlIres,_tlIsel) =
-                  (tl_ _tlOcss _tlOfths _tlOsbls )
+                  (tl_ _tlOcss _tlOnextfathers _tlOsbls )
           in  ( _lhsObefs,_lhsOres,_lhsOsel)))
 sem_NTrees_Nil :: T_NTrees 
 sem_NTrees_Nil  =
     (\ _lhsIcss
-       _lhsIfths
+       _lhsInextfathers
        _lhsIsbls ->
          (let _lhsObefs :: ([Node])
               _lhsOsel :: ([Maybe Selector])
               _lhsOres :: ([Maybe BoxTree])
               _lhsObefs =
-                  ({-# LINE 31 "./src/ag/NTree.ag" #-}
+                  ({-# LINE 34 "./src/ag/NTree.ag" #-}
                    _lhsIsbls
-                   {-# LINE 234 "./src/ag/NTree.hs" #-})
+                   {-# LINE 241 "./src/ag/NTree.hs" #-})
               _lhsOsel =
-                  ({-# LINE 60 "./src/ag/NTree.ag" #-}
+                  ({-# LINE 61 "./src/ag/NTree.ag" #-}
                    []
-                   {-# LINE 238 "./src/ag/NTree.hs" #-})
+                   {-# LINE 245 "./src/ag/NTree.hs" #-})
               _lhsOres =
-                  ({-# LINE 77 "./src/ag/NTree.ag" #-}
+                  ({-# LINE 78 "./src/ag/NTree.ag" #-}
                    []
-                   {-# LINE 242 "./src/ag/NTree.hs" #-})
+                   {-# LINE 249 "./src/ag/NTree.hs" #-})
           in  ( _lhsObefs,_lhsOres,_lhsOsel)))
 -- Node --------------------------------------------------------
 data Node  = NRuleCss (((Selector, [Property]))) 
@@ -266,11 +273,11 @@ sem_Node_NRuleCss rule_  =
          _nd =
              ({-# LINE 14 "./src/ag/NTree.ag" #-}
               NRuleCss rule_
-              {-# LINE 270 "./src/ag/NTree.hs" #-})
+              {-# LINE 277 "./src/ag/NTree.hs" #-})
          _lhsOnd =
              ({-# LINE 14 "./src/ag/NTree.ag" #-}
               _nd
-              {-# LINE 274 "./src/ag/NTree.hs" #-})
+              {-# LINE 281 "./src/ag/NTree.hs" #-})
      in  ( _lhsOnd))
 sem_Node_NStyle :: T_Node 
 sem_Node_NStyle  =
@@ -278,11 +285,11 @@ sem_Node_NStyle  =
          _nd =
              ({-# LINE 14 "./src/ag/NTree.ag" #-}
               NStyle
-              {-# LINE 282 "./src/ag/NTree.hs" #-})
+              {-# LINE 289 "./src/ag/NTree.hs" #-})
          _lhsOnd =
              ({-# LINE 14 "./src/ag/NTree.ag" #-}
               _nd
-              {-# LINE 286 "./src/ag/NTree.hs" #-})
+              {-# LINE 293 "./src/ag/NTree.hs" #-})
      in  ( _lhsOnd))
 sem_Node_NTag :: String ->
                  T_Node 
@@ -291,11 +298,11 @@ sem_Node_NTag string_  =
          _nd =
              ({-# LINE 14 "./src/ag/NTree.ag" #-}
               NTag string_
-              {-# LINE 295 "./src/ag/NTree.hs" #-})
+              {-# LINE 302 "./src/ag/NTree.hs" #-})
          _lhsOnd =
              ({-# LINE 14 "./src/ag/NTree.ag" #-}
               _nd
-              {-# LINE 299 "./src/ag/NTree.hs" #-})
+              {-# LINE 306 "./src/ag/NTree.hs" #-})
      in  ( _lhsOnd))
 sem_Node_NText :: String ->
                   T_Node 
@@ -304,11 +311,11 @@ sem_Node_NText string_  =
          _nd =
              ({-# LINE 14 "./src/ag/NTree.ag" #-}
               NText string_
-              {-# LINE 308 "./src/ag/NTree.hs" #-})
+              {-# LINE 315 "./src/ag/NTree.hs" #-})
          _lhsOnd =
              ({-# LINE 14 "./src/ag/NTree.ag" #-}
               _nd
-              {-# LINE 312 "./src/ag/NTree.hs" #-})
+              {-# LINE 319 "./src/ag/NTree.hs" #-})
      in  ( _lhsOnd))
 -- Property ----------------------------------------------------
 data Property  = Property (String) (String) 
@@ -328,11 +335,11 @@ sem_Property_Property prop_ value_  =
          _nd =
              ({-# LINE 14 "./src/ag/NTree.ag" #-}
               Property prop_ value_
-              {-# LINE 332 "./src/ag/NTree.hs" #-})
+              {-# LINE 339 "./src/ag/NTree.hs" #-})
          _lhsOnd =
              ({-# LINE 14 "./src/ag/NTree.ag" #-}
               _nd
-              {-# LINE 336 "./src/ag/NTree.hs" #-})
+              {-# LINE 343 "./src/ag/NTree.hs" #-})
      in  ( _lhsOnd))
 -- Root --------------------------------------------------------
 data Root  = Root (NTree ) 
@@ -347,26 +354,31 @@ type T_Root  = ( BoxTree)
 sem_Root_Root :: T_NTree  ->
                  T_Root 
 sem_Root_Root ntree_  =
-    (let _ntreeOfths :: ([Node])
+    (let _ntreeOnextfathers :: ([Node])
+         _ntreeOfathers :: ([Node])
          _ntreeOcss :: ([Selector])
          _lhsOres :: BoxTree
          _ntreeInode :: Node 
          _ntreeIres :: (Maybe BoxTree)
          _ntreeIsel :: ([Maybe Selector])
-         _ntreeOfths =
-             ({-# LINE 25 "./src/ag/NTree.ag" #-}
+         _ntreeOnextfathers =
+             ({-# LINE 27 "./src/ag/NTree.ag" #-}
               []
-              {-# LINE 360 "./src/ag/NTree.hs" #-})
-         _ntreeOcss =
-             ({-# LINE 65 "./src/ag/NTree.ag" #-}
-              catMaybes _ntreeIsel
-              {-# LINE 364 "./src/ag/NTree.hs" #-})
-         _lhsOres =
-             ({-# LINE 92 "./src/ag/NTree.ag" #-}
-              fromJust _ntreeIres
               {-# LINE 368 "./src/ag/NTree.hs" #-})
+         _ntreeOfathers =
+             ({-# LINE 28 "./src/ag/NTree.ag" #-}
+              []
+              {-# LINE 372 "./src/ag/NTree.hs" #-})
+         _ntreeOcss =
+             ({-# LINE 66 "./src/ag/NTree.ag" #-}
+              catMaybes _ntreeIsel
+              {-# LINE 376 "./src/ag/NTree.hs" #-})
+         _lhsOres =
+             ({-# LINE 93 "./src/ag/NTree.ag" #-}
+              fromJust _ntreeIres
+              {-# LINE 380 "./src/ag/NTree.hs" #-})
          ( _ntreeInode,_ntreeIres,_ntreeIsel) =
-             (ntree_ _ntreeOcss _ntreeOfths )
+             (ntree_ _ntreeOcss _ntreeOfathers _ntreeOnextfathers )
      in  ( _lhsOres))
 -- SSelector ---------------------------------------------------
 data SSelector  = TypeSelector (String) 
@@ -388,11 +400,11 @@ sem_SSelector_TypeSelector string_  =
          _nd =
              ({-# LINE 14 "./src/ag/NTree.ag" #-}
               TypeSelector string_
-              {-# LINE 392 "./src/ag/NTree.hs" #-})
+              {-# LINE 404 "./src/ag/NTree.hs" #-})
          _lhsOnd =
              ({-# LINE 14 "./src/ag/NTree.ag" #-}
               _nd
-              {-# LINE 396 "./src/ag/NTree.hs" #-})
+              {-# LINE 408 "./src/ag/NTree.hs" #-})
      in  ( _lhsOnd))
 sem_SSelector_UnivSelector :: T_SSelector 
 sem_SSelector_UnivSelector  =
@@ -400,11 +412,11 @@ sem_SSelector_UnivSelector  =
          _nd =
              ({-# LINE 14 "./src/ag/NTree.ag" #-}
               UnivSelector
-              {-# LINE 404 "./src/ag/NTree.hs" #-})
+              {-# LINE 416 "./src/ag/NTree.hs" #-})
          _lhsOnd =
              ({-# LINE 14 "./src/ag/NTree.ag" #-}
               _nd
-              {-# LINE 408 "./src/ag/NTree.hs" #-})
+              {-# LINE 420 "./src/ag/NTree.hs" #-})
      in  ( _lhsOnd))
 -- Selector ----------------------------------------------------
 data Selector  = CombSelector (SSelector ) (String) (Selector ) 
@@ -430,11 +442,11 @@ sem_Selector_CombSelector sSelector_ string_ selector_  =
          _nd =
              ({-# LINE 14 "./src/ag/NTree.ag" #-}
               CombSelector _sSelectorInd string_ _selectorInd
-              {-# LINE 434 "./src/ag/NTree.hs" #-})
+              {-# LINE 446 "./src/ag/NTree.hs" #-})
          _lhsOnd =
              ({-# LINE 14 "./src/ag/NTree.ag" #-}
               _nd
-              {-# LINE 438 "./src/ag/NTree.hs" #-})
+              {-# LINE 450 "./src/ag/NTree.hs" #-})
          ( _sSelectorInd) =
              (sSelector_ )
          ( _selectorInd) =
@@ -448,11 +460,11 @@ sem_Selector_SimpSelector sSelector_  =
          _nd =
              ({-# LINE 14 "./src/ag/NTree.ag" #-}
               SimpSelector _sSelectorInd
-              {-# LINE 452 "./src/ag/NTree.hs" #-})
+              {-# LINE 464 "./src/ag/NTree.hs" #-})
          _lhsOnd =
              ({-# LINE 14 "./src/ag/NTree.ag" #-}
               _nd
-              {-# LINE 456 "./src/ag/NTree.hs" #-})
+              {-# LINE 468 "./src/ag/NTree.hs" #-})
          ( _sSelectorInd) =
              (sSelector_ )
      in  ( _lhsOnd))

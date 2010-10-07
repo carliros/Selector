@@ -16,13 +16,16 @@ ATTR NTree [|| node:Node ]
 SEM NTree
     | NTree lhs.node = @node.nd
 
-ATTR NTrees NTree [ fths:{[Node]} ||]
+ATTR NTrees NTree [ nextfathers :{[Node]} ||]
+ATTR        NTree [ fathers     :{[Node]} ||]
 SEM NTrees
-    | Cons hd.fths = @hd.node : @lhs.fths
-           tl.fths = @lhs.fths
+    | Cons hd.nextfathers = @hd.node : @lhs.nextfathers
+           hd.fathers     = @lhs.nextfathers
+           tl.nextfathers = @lhs.nextfathers
 
 SEM Root
-    | Root ntree.fths = []
+    | Root ntree.nextfathers = []
+                .fathers     = []
 
 ATTR NTrees [ sbls:{[Node]} || befs:{[Node]}]
 SEM NTrees
@@ -33,15 +36,13 @@ SEM NTrees
 SEM NTree
     | NTree ntrees.sbls = []
 
-{-
-    default style sheet
--}
+-- default style sheet
 {
 defaultStyle :: [Selector]
-defaultStyle = [ --SimpSelector (TypeSelector "big")
-                 CombSelector (TypeSelector "body") ">" (CombSelector (TypeSelector "p") " " (SimpSelector (TypeSelector "big")))
+defaultStyle = [ SimpSelector (TypeSelector "big")
+               , CombSelector (TypeSelector "body") ">" (CombSelector (TypeSelector "p") " " (SimpSelector (TypeSelector "big")))
                , SimpSelector (TypeSelector "small")
-               --, SimpSelector UnivSelector
+               , SimpSelector UnivSelector
                ]
 }
 
@@ -67,7 +68,7 @@ SEM Root
 -- Generating the Formatting Structure
 
 SEM NTree
-    | NTree loc.rlist = map (applySelector @node.nd @lhs.fths @ntrees.befs) @lhs.css
+    | NTree loc.rlist = map (applySelector @node.nd @lhs.fathers @ntrees.befs) @lhs.css
             loc.sel   = or @loc.rlist
             loc.num   = if @loc.sel then fromMaybe (-1) (elemIndex True @loc.rlist) + 1 else 0
 
