@@ -16,23 +16,25 @@ ATTR NTree [|| nd:Node ]
 SEM NTree
     | NTree lhs.nd = @node.nd
 
-ATTR NTrees NTree [ fathers: {[Node]} ||]
+ATTR NTrees NTree [ fathers: {[(Node, [Node])]} ||]
 
 SEM NTree
-    | NTree ntrees.fathers = @node.nd : @lhs.fathers
+    | NTree ntrees.fathers = @loc.nfs : @lhs.fathers
             loc.fathers    = @lhs.fathers
+            loc.nfs        = (@node.nd, @loc.siblings)
 
 SEM Root
-    | Root ntree.fathers = []
+    | Root ntree.fathers  = []
+           ntree.siblings = []
 
-ATTR NTrees [ sbls:{[Node]} || befs:{[Node]}]
+ATTR NTrees NTree [ siblings: {[Node]} ||]
 SEM NTrees
-    | Cons tl.sbls  = @hd.nd : @lhs.sbls
-           lhs.befs = @lhs.sbls
-    | Nil  lhs.befs = @lhs.sbls
+    | Cons tl.siblings = @hd.nd : @lhs.siblings
+           hd.siblings = @lhs.siblings
 
 SEM NTree
-    | NTree ntrees.sbls = []
+    | NTree ntrees.siblings = []
+            loc.siblings    = @lhs.siblings
 
 -- default style sheet
 {
@@ -66,7 +68,7 @@ SEM Root
 -- Generating the Formatting Structure
 
 SEM NTree
-    | NTree loc.rlist = map (applySelector @node.nd @loc.fathers @ntrees.befs) (map (\sel -> reverse (transformSelector sel)) @lhs.css)
+    | NTree loc.rlist = map (applySelector @node.nd @loc.fathers (reverse @loc.siblings) [] 0) (map (\sel -> reverse (transformSelector sel)) @lhs.css)
             loc.sel   = or @loc.rlist
             loc.num   = if @loc.sel then fromMaybe (-1) (elemIndex True @loc.rlist) + 1 else 0
 
@@ -104,46 +106,57 @@ transformSelector (CombSelector s op sel)
         ">" -> (TChildSelector s) : transformSelector sel
         "+" -> (TSiblnSelector s) : transformSelector sel
 
-applySelector :: Node -> [Node] -> [Node] -> [TSelector] -> Bool
-applySelector    nd      fathers   siblings  []
+--applySelector :: Node -> [Node] -> [Node] -> [Node] -> Int -> [TSelector] -> Bool
+applySelector    _       _         _         _         _      []
     = True
-applySelector    nd      fathers   siblings  (sel:nextSel)
+applySelector    nd      fathers   siblings  before    count  (sel:nextSel)
     = case sel of
-        TSimplSelector s -> applySimplSelector nd fathers siblings s nextSel
-        TDescdSelector s -> applyDescdSelector nd fathers siblings s nextSel
-        TChildSelector s -> applyChildSelector nd fathers siblings s nextSel
-        TSiblnSelector s -> applySiblnSelector nd fathers siblings s nextSel
+        TSimplSelector s -> applySimplSelector nd fathers siblings before count s nextSel
+        TDescdSelector s -> applyDescdSelector nd fathers siblings before count s nextSel
+        TChildSelector s -> applyChildSelector nd fathers siblings before count s nextSel
+        TSiblnSelector s -> applySiblnSelector nd fathers siblings before count s nextSel
 
-applySimplSelector nd fathers siblings s nextSel
+applySimplSelector nd fathers siblings before count s nextSel
     = if testSimpleSelector s nd
-      then applySelector nd fathers siblings nextSel
+      then applySelector nd fathers siblings before (count+1) nextSel
       else False
 
-applyDescdSelector nd []     siblings _ _
+applyDescdSelector _  []     _        _      _     _ _
     = False
-applyDescdSelector nd (f:fs) siblings s nextSel
-    = if testSimpleSelector s f
-      then if applySelector nd fs siblings nextSel
+applyDescdSelector nd (f:fs) siblings before count s nextSel
+    = if testSimpleSelector s (fst f)
+      then if applySelector nd fs siblings (f:before) (count+1) nextSel
            then True
-           else applyDescdSelector nd fs siblings s nextSel
-      else applyDescdSelector nd fs siblings s nextSel
+           else applyDescdSelector nd fs siblings before count s nextSel
+      else applyDescdSelector nd fs siblings before count s nextSel
 
-applyChildSelector nd []     siblings _ _
+applyChildSelector _  []     _        _      _     _ _
     = False
-applyChildSelector nd (f:fs) siblings s nextSel
-    = if testSimpleSelector s f
-      then applySelector nd fs siblings nextSel
+applyChildSelector nd (f:fs) siblings before count s nextSel
+    = if testSimpleSelector s (fst f)
+      then applySelector nd fs siblings (f:before) (count+1) nextSel
       else False
 
-applySiblnSelector nd _ [] _ _
-    = False 
-applySiblnSelector nd fathers siblings s nextSel
-    = let ntest = case s of
-                    TypeSelector nm -> elem (NTag nm) siblings
-                    UnivSelector    -> True
-      in if ntest
-         then applySelector nd fathers siblings nextSel
-         else False
+applySiblnSelector nd fathers siblings before count s nextSel
+    = let brothers = if count<=1 then siblings else snd $ head before
+      in let ntest = case s of
+                        TypeSelector nm -> let (bool,ts) = getNextValidTag brothers
+                                           in if bool
+                                              then ((NTag nm) == (head ts), tail ts)
+                                              else (False, [])  -- the empty list it's not important because it won't use any more
+                        UnivSelector    -> let (bool,ts) = getNextValidTag brothers
+                                           in if bool
+                                              then (True, tail ts)
+                                              else (False, [])  -- the empty list it's not important because it won't use any more
+         in if fst ntest
+            then if count<=1
+                 then applySelector nd fathers (snd ntest) before count nextSel
+                 else applySelector nd fathers siblings (let (f,_)=head before in (f,snd ntest):(tail before)) count nextSel
+            else False
+
+getNextValidTag []             = (False, [])
+getNextValidTag l@((NTag _):_) = (True, l)
+getNextValidTag (_:xs)         = getNextValidTag xs
 
 testSimpleSelector s nd = case s of
                             TypeSelector nm -> nd == (NTag nm)
