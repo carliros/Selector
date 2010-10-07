@@ -28,7 +28,8 @@ keywordstxt  = [ "html", "head", "body", "table", "tr", "td", "th", "caption", "
                , "p"
                , "big"
                , "small"
-               , "style" ]
+               , "style" 
+               , "div"  ]
 keywordsops  = [ "<", ">", "</"]
 symbols      = "=*+>:;{}";
 opchars      = "/<>";

@@ -35,7 +35,7 @@ pProperty = Property <$> pString <* pSymbol ":" <*> pString
 
 pBody = NTree (NTag "body") <$> pTagged "body" (pList1 pElem)
 
-pElem =  pEHead <|> pParag <|> pBig <|> pSmall <|> pText
+pElem =  pEHead <|> pParag <|> pBig <|> pSmall <|> pDiv <|> pText
 
 pEHead =  NTree (NTag "h1") <$> pTagged "h1" (pList1 pElem)
       <|> NTree (NTag "h2") <$> pTagged "h2" (pList1 pElem)
@@ -47,6 +47,7 @@ pEHead =  NTree (NTag "h1") <$> pTagged "h1" (pList1 pElem)
 pParag = NTree (NTag "p"    ) <$> pTagged "p"     (pList1 pElem)
 pBig   = NTree (NTag "big"  ) <$> pTagged "big"   (pList1 pElem)
 pSmall = NTree (NTag "small") <$> pTagged "small" (pList1 pElem)
+pDiv   = NTree (NTag "div"  ) <$> pTagged "div"   (pList1 pElem)
 
 pText = (\lstr -> NTree (NText (unwords lstr)) []) <$> pList1 pString
 
