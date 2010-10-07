@@ -82,9 +82,9 @@ applySiblnSelector nd fathers siblings before count s nextSel
                  else applySelector nd fathers siblings (let (f,_)=head before in (f,snd ntest):(tail before)) count nextSel
             else False
 
-getNextValidTag []               = (False, [])
+getNextValidTag []             = (False, [])
 getNextValidTag l@((NTag _):_) = (True, l)
-getNextValidTag (_:xs)           = getNextValidTag xs
+getNextValidTag (_:xs)         = getNextValidTag xs
 
 testSimpleSelector s nd = case s of
                             TypeSelector nm -> nd == (NTag nm)
